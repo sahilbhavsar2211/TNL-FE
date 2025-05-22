@@ -460,32 +460,7 @@ export default function FullPageBot() {
               placeholder="Type your message..."
               className="flex-1 p-2 rounded-lg focus:outline-none"
               disabled={loading || sessionLoading}
-            />
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleFileChange}
-              ref={fileInputRef}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={triggerFileInput}
-              className="p-2 text-gray-500 hover:text-gray-700"
-              disabled={loading || sessionLoading}
-            >
-              <Upload size={20} />
-            </button>
-            {file && (
-              <button
-                type="button"
-                onClick={handleUpload}
-                className="p-2 text-gray-500 hover:text-gray-700"
-                disabled={loading || sessionLoading}
-              >
-                Upload CSV
-              </button>
-            )}
+            />        
             <button
               type="button"
               onClick={clearChat}
