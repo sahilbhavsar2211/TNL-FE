@@ -397,7 +397,7 @@ export default function FullPageBot() {
         <div className="w-full flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div>
-              <h1 className="font-semibold font-poppins text-lg text-black">T&L Assistant</h1>
+              <h1 className="font-semibold font-poppins text-lg text-black">Excel Logistics Assistant</h1>
               <p className="text-sm font-bold text-gray-600">AI-Powered Support</p>
             </div>
           </div>
@@ -415,7 +415,7 @@ export default function FullPageBot() {
             </div>
           ) : messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-600">
-              <p className="text-lg font-medium">Welcome to T&L Assistant</p>
+              <p className="text-lg font-medium">Hi I'm AIRA</p>
               <p className="text-center mt-2">How can I help you today?</p>
             </div>
           ) : (
