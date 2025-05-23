@@ -398,6 +398,13 @@ export default function FullPageBot() {
             </div>
           ) : messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-600">
+              <div className="w-full max-w-[300px] h-[80px] bg-transparent rounded-full flex items-center justify-center">
+                      <img 
+                        src="Robot-Gif-Text-Box-Light-Blue.gif" 
+                        alt="Alert Icon" 
+                        className="h-16 w-20"
+                      />
+                    </div>
               <p className="text-lg font-medium">Hi I'm AIRA</p>
               <p className="text-center mt-2">How can I help you today?</p>
             </div>
