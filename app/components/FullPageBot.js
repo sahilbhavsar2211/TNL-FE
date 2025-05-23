@@ -15,11 +15,9 @@ export default function FullPageBot() {
   const [clientId, setClientId] = useState(null);
   const [chatId, setChatId] = useState(null);
   const [sessionLoading, setSessionLoading] = useState(true);
-  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailRequestIndex, setEmailRequestIndex] = useState(null);
+  const [emailRequestType, setEmailRequestType] = useState(null);
   const [email, setEmail] = useState('');
-  const [ticketData, setTicketData] = useState(null);
-  const [ticketSubmitting, setTicketSubmitting] = useState(false);
-  const [orderId, setOrderId] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -186,7 +184,6 @@ export default function FullPageBot() {
           session_id: chatId,
           query: userMessage,
           client_id: clientId,
-          order_id: orderId,
         }),
       });
       const data = await response.json();
@@ -195,34 +192,19 @@ export default function FullPageBot() {
         const assistantMessage = { role: 'assistant', content: data.response };
         setMessages((prev) => {
           const newMessages = [...prev, assistantMessage];
-          if (data.response.toLowerCase().includes('unfortunately')) {
-            newMessages.push({
-              role: 'system',
-              content: 'For further assistance, please contact our support team at support@retail.com.',
-            });
+          if (data.response.toLowerCase().includes('frustrating')) {
+            setEmailRequestIndex(newMessages.length - 1);
+            setEmailRequestType('frustrating');
+          }
+          else if(data.response.toLowerCase().includes('flagged')){
+            setEmailRequestIndex(newMessages.length - 1);
+            setEmailRequestType('vip');
           }
           return newMessages;
         });
 
-        if (data.order_id) {
-          setOrderId(data.order_id);
-        }
-
         if (data.analysis?.needs_ticket || data.analysis?.intent === 'report_issue' || data.analysis?.intent === 'escalate') {
-          setTicketData({
-            query: userMessage,
-            conversation_history: messages.map((m) => `${m.role}: ${m.content}`).join('\n'),
-            order_id: orderId || data.order_id,
-            intent: data.analysis.intent,
-          });
-          setShowEmailModal(true);
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: 'system',
-              content: 'This query requires additional support. Please provide your email so our team can assist you better.',
-            },
-          ]);
+          setEmailRequestIndex(messages.length + 1);
         }
       } else {
         let errorMessage = data.error || 'Something went wrong';
@@ -245,52 +227,54 @@ export default function FullPageBot() {
 
   // Handle email submission
   const handleEmailSubmit = async () => {
-    if (!email.trim() || !ticketData) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
       toast.error('Please enter a valid email address');
       return;
     }
 
-    setTicketSubmitting(true);
+    const conversationHistory = messages
+      .map((msg) => `${msg.role === 'user' ? 'You' : 'AIRA'}: ${msg.content}`)
+      .join('\n');
+    const lastQuery = messages.filter((msg) => msg.role === 'user').slice(-1)[0]?.content || '';
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/create-ticket`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
         body: JSON.stringify({
           email,
-          query: ticketData.query,
-          conversation_history: ticketData.conversation_history,
-          order_id: ticketData.order_id,
+          conversation_history: conversationHistory,
+          query: lastQuery,
+          type : emailRequestType,
         }),
       });
       const data = await response.json();
 
-      if (response.ok) {
-        toast.success('Support ticket created successfully');
-        setShowEmailModal(false);
-        setEmail('');
+      if (data.status === 'success') {
         setMessages((prev) => [
           ...prev,
           {
             role: 'system',
-            content: `Support ticket created successfully! Our team will contact you at ${email} shortly. Ticket ID: ${data.ticket_id}`,
+            content: 'Your ticket has been successfully created and shared with respective team. Feel free to ask if there’s anything else I can help you with.',
           },
         ]);
+        setEmailRequestIndex(null);
+        setEmail('');
+        toast.success('Ticket sent successfully!');
       } else {
-        toast.error(data.error || 'Failed to create support ticket');
+        toast.error(data.message || 'Failed to send ticket');
       }
     } catch (error) {
-      toast.error('Error creating support ticket');
-      console.error('Error:', error);
-    } finally {
-      setTicketSubmitting(false);
-      setTicketData(null);
+      toast.error('Failed to send ticket to the team');
+      console.error('Error sending ticket:', error);
     }
+  };
+
+  // Handle email cancellation
+  const handleCancelEmail = () => {
+    setEmailRequestIndex(null);
+    setEmail('');
   };
 
   // Clear chat history
@@ -310,7 +294,6 @@ export default function FullPageBot() {
       if (response.ok) {
         setMessages([]);
         setFile(null);
-        setOrderId(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -334,31 +317,31 @@ export default function FullPageBot() {
   // Enhanced Markdown components
   const markdownComponents = {
     a: ({ node, ...props }) => (
-      <a {...props} style={{ color: '#FF3000', textDecoration: 'underline' }} />
+      <a {...props} style={{ color: '#155dfc', textDecoration: 'underline' }} />
     ),
     h1: ({ node, ...props }) => (
-      <h1 {...props} className="text-xl font-bold mt-2 mb-1" />
+      <h1 {...props} className="text-xl font-bold my-1" />
     ),
     h2: ({ node, ...props }) => (
-      <h2 {...props} className="text-lg font-bold mt-2 mb-1" />
+      <h2 {...props} className="text-lg font-bold my-1" />
     ),
     h3: ({ node, ...props }) => (
-      <h3 {...props} className="text-base font-bold mt-2 mb-1" />
+      <h3 {...props} className="text-base font-bold my-1" />
     ),
     ul: ({ node, ...props }) => (
-      <ul {...props} className="list-disc pl-5 my-1" />
+      <ul {...props} className="list-disc pl-4 my-1" />
     ),
     ol: ({ node, ...props }) => (
-      <ol {...props} className="list-decimal pl-5 my-1" />
+      <ol {...props} className="list-decimal pl-4 my-1" />
     ),
     li: ({ node, ...props }) => (
-      <li {...props} className="ml-1 my-0.5 pl-1" />
+      <li {...props} className="ml-1 my-0.5" />
     ),
     p: ({ node, ...props }) => (
       <p {...props} className="my-1" />
     ),
     blockquote: ({ node, ...props }) => (
-      <blockquote {...props} className="border-l-2 border-orange-300 pl-2 italic my-1" />
+      <blockquote {...props} className="border-l-2 border-blue-300 pl-2 italic my-1" />
     ),
     code: ({ node, inline, ...props }) => (
       inline ? 
@@ -393,7 +376,7 @@ export default function FullPageBot() {
       <Toaster position="top-right" />
       
       {/* Header */}
-      <header className="bg-white p-3 z-9 shadow-sm">
+      <header className="bg-white p-3 z-10 shadow-sm">
         <div className="w-full flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div>
@@ -424,20 +407,58 @@ export default function FullPageBot() {
                 <div key={index} className="flex flex-col">
                   <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`p-3 rounded-xl max-w-lg ${
+                      className={`p-3 break-words max-w-sm sm:max-w-[385px] md:max-w-[960px] lg:max-w-60rem xl:max-w-60rem ${
                         message.role === 'user'
-                          ? 'bg-blue-600 text-white'
+                          ? 'ml-auto text-white rounded-tl-xl rounded-tr-xl rounded-br-none rounded-bl-xl'
                           : message.role === 'system'
-                          ? 'bg-yellow-100 text-gray-800 border border-yellow-300'
-                          : 'bg-white border border-gray-200'
+                          ? 'bg-gray-100 mx-auto text-center'
+                          : 'bg-white ml-7 border-gray-200 rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-none'
                       }`}
+                      style={message.role === 'user' ? { backgroundColor: '#155dfc' } : {}}
                     >
-                      <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
+                      <div className={`text-sm leading-tight ${message.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
+                        <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
+                      </div>
                     </div>
                   </div>
+                  {/* Email input box */}
+                  {emailRequestIndex === index && (
+                    <div className="mt-2 mb-2 w-full flex justify-start">
+                      <div className="p-3 bg-white rounded-lg ml-7 border border-gray-200 max-w-sm sm:max-w-[385px] md:max-w-60rem lg:max-w-60rem xl:max-w-60rem">
+                        <p className="text-sm text-gray-700 mb-2">
+                        To proceed, please share your email address so I can create a priority ticket for you.You can also “cancel” if you’d prefer to continue chatting her.
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Enter your email"
+                            className="w-full p-2 h-9 rounded-lg text-base border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none"
+                          />
+                          <div className="flex w-full gap-2">
+                            <button
+                              onClick={handleCancelEmail}
+                              className="flex-1 px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 text-base rounded-lg transition-colors border border-gray-300 cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={handleEmailSubmit}
+                              className="flex-1 px-4 py-2 text-white text-base rounded-lg transition-colors cursor-pointer"
+                              style={{ backgroundColor: '#155dfc' }}
+                            >
+                              Send
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {/* Profile icon */}
                   {message.role === 'assistant' && (
-                    <div className="flex items-center mt-1 ml-2">
-                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                    <div className="flex items-center mt-1 ml-7">
+                      <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center">
                         <span className="text-xs font-semibold">AI</span>
                       </div>
                       <span className="text-xs text-gray-500 ml-2">Assistant</span>
@@ -459,8 +480,8 @@ export default function FullPageBot() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message..."
               className="flex-1 p-2 rounded-lg focus:outline-none"
-              disabled={loading || sessionLoading}
-            />        
+              disabled={loading || sessionLoading || emailRequestIndex !== null}
+            />
             <button
               type="button"
               onClick={clearChat}
@@ -471,7 +492,7 @@ export default function FullPageBot() {
             </button>
             <button
               type="submit"
-              disabled={loading || !input.trim() || sessionLoading}
+              disabled={loading || !input.trim() || sessionLoading || emailRequestIndex !== null}
               className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
               {loading ? <Loader className="animate-spin" size={20} /> : <Send size={20} />}
@@ -479,58 +500,6 @@ export default function FullPageBot() {
           </form>
         </div>
       </main>
-
-      {/* Email Modal */}
-      {showEmailModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">Submit Your Email for Support</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              We'll create a support ticket and our team will get back to you shortly with assistance.
-            </p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@example.com"
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setShowEmailModal(false);
-                  setEmail('');
-                  setTicketData(null);
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                disabled={ticketSubmitting}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleEmailSubmit}
-                disabled={ticketSubmitting || !email.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
-              >
-                {ticketSubmitting ? (
-                  <>
-                    <Loader className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                    Creating Ticket...
-                  </>
-                ) : (
-                  'Submit'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
