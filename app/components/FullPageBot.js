@@ -380,8 +380,8 @@ export default function FullPageBot() {
         <div className="w-full flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div>
-              <h1 className="font-semibold font-poppins text-lg text-black">Excel Logistics Assistant</h1>
-              <p className="text-sm font-bold text-gray-600">AI-Powered Support</p>
+              <h1 className="font-semibold font-poppins text-lg text-black">Excel Logistics</h1>
+              <p className="text-sm font-bold text-gray-600">AI Assistant</p>
             </div>
           </div>
         </div>
@@ -390,7 +390,8 @@ export default function FullPageBot() {
       {/* Main Content */}
       <main className="flex-grow flex flex-col overflow-hidden">
         {/* Chat Area */}
-        <div className="flex-grow overflow-y-auto bg-gray-100 p-4">
+        <div className="flex-grow overflow-y-auto p-4"
+        style={{ backgroundColor: '#DBEAFE' }}>
           {sessionLoading || !clientId || !chatId ? (
             <div className="h-full flex items-center justify-center text-gray-600">
               <Loader className="animate-spin mr-2" size={24} />
@@ -402,7 +403,7 @@ export default function FullPageBot() {
                       <img 
                         src="Robot-Gif-Text-Box-Light-Blue.gif" 
                         alt="Alert Icon" 
-                        className="h-16 w-20"
+                        className="h-24 w-28"
                       />
                     </div>
               <p className="text-lg font-medium">Hi I'm AIRA</p>
@@ -492,7 +493,7 @@ export default function FullPageBot() {
             <button
               type="button"
               onClick={clearChat}
-              className="p-2 text-gray-500 hover:text-gray-700"
+              className="p-2 text-gray-500 hover:text-gray-700 cursor-pointer"
               disabled={loading || sessionLoading || messages.length === 0}
             >
               <Trash2 size={20} />
@@ -500,7 +501,7 @@ export default function FullPageBot() {
             <button
               type="submit"
               disabled={loading || !input.trim() || sessionLoading || emailRequestIndex !== null}
-              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
             >
               {loading ? <Loader className="animate-spin" size={20} /> : <Send size={20} />}
             </button>
