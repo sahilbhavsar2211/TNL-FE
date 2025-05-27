@@ -317,7 +317,12 @@ export default function FullPageBot() {
   // Enhanced Markdown components
   const markdownComponents = {
     a: ({ node, ...props }) => (
-      <a {...props} style={{ color: '#155dfc', textDecoration: 'underline' }} />
+      <a
+        {...props}
+        style={{ color: '#155dfc', textDecoration: 'underline' }}
+        target="_blank" // Open link in new tab
+        rel="noopener noreferrer" // Security enhancement
+      />
     ),
     h1: ({ node, ...props }) => (
       <h1 {...props} className="text-xl font-bold my-1" />
@@ -399,11 +404,11 @@ export default function FullPageBot() {
             </div>
           ) : messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-600">
-              <div className="w-full max-w-[300px] h-[80px] bg-transparent rounded-full flex items-center justify-center">
+              <div className="w-full mb-3 max-w-[300px] h-[80px] bg-transparent rounded-full flex items-center justify-center">
                       <img 
                         src="Robot-Gif-Text-Box-Light-Blue.gif" 
                         alt="Alert Icon" 
-                        className="h-24 w-28"
+                        className="h-22 w-28"
                       />
                     </div>
               <p className="text-lg font-medium">Hi I'm AIRA</p>
@@ -434,7 +439,7 @@ export default function FullPageBot() {
                     <div className="mt-2 mb-2 w-full flex justify-start">
                       <div className="p-3 bg-white rounded-lg ml-7 border border-gray-200 max-w-sm sm:max-w-[385px] md:max-w-60rem lg:max-w-60rem xl:max-w-60rem">
                         <p className="text-sm text-gray-700 mb-2">
-                        To proceed, please share your email address so I can create a priority ticket for you.You can also “cancel” if you’d prefer to continue chatting her.
+                        To proceed, please share your email address so I can create a priority ticket for you.You can also “cancel” if you’d prefer to continue chatting here.
                         </p>
                         <div className="flex flex-col gap-2">
                           <input
